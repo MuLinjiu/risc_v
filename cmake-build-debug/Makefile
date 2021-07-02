@@ -130,17 +130,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named risc_v
+# Target rules for targets named code
 
 # Build rule for target.
-risc_v: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 risc_v
-.PHONY : risc_v
+code: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 code
+.PHONY : code
 
 # fast build rule for target.
-risc_v/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/risc_v.dir/build.make CMakeFiles/risc_v.dir/build
-.PHONY : risc_v/fast
+code/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/code.dir/build.make CMakeFiles/code.dir/build
+.PHONY : code/fast
 
 main.o: main.cpp.o
 
@@ -148,7 +148,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/risc_v.dir/build.make CMakeFiles/risc_v.dir/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/code.dir/build.make CMakeFiles/code.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -157,7 +157,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/risc_v.dir/build.make CMakeFiles/risc_v.dir/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/code.dir/build.make CMakeFiles/code.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -166,7 +166,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/risc_v.dir/build.make CMakeFiles/risc_v.dir/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/code.dir/build.make CMakeFiles/code.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -177,7 +177,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... risc_v"
+	@echo "... code"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

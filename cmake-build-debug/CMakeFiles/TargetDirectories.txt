@@ -1,3 +1,3 @@
 /Users/mulinjiu/Desktop/HXL/大一暑/PPCA/risc_v_new/cmake-build-debug/CMakeFiles/rebuild_cache.dir
 /Users/mulinjiu/Desktop/HXL/大一暑/PPCA/risc_v_new/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/mulinjiu/Desktop/HXL/大一暑/PPCA/risc_v_new/cmake-build-debug/CMakeFiles/risc_v.dir
+/Users/mulinjiu/Desktop/HXL/大一暑/PPCA/risc_v_new/cmake-build-debug/CMakeFiles/code.dir
