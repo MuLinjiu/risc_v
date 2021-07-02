@@ -26,8 +26,8 @@ void INPUT(){
 }
 
 int main(){
-    freopen("sample.data", "r", stdin);
-    freopen("2.txt","w",stdout);
+    //freopen("pi.data", "r", stdin);
+    //freopen("2.txt","w",stdout);
     INPUT();
     Si.RUN();
     return 0;

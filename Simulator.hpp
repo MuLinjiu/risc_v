@@ -328,7 +328,7 @@ public:
         if(preIF.endornot)return;
         if(preIF.bubble){
             preIF.bubble--;
-            cout << "IF BUBBLE" << " " << preIF.bubble << endl;
+//            cout << "IF BUBBLE" << " " << preIF.bubble << endl;
             return;
         }
 
@@ -338,7 +338,7 @@ public:
                 preEX.pc_possible_change = false;
                 preIF.bubble += 2;
                 preID.bubble += 3;
-                preID.empty = false;
+                //preID.empty = false;
                 return;
             }
         //unsigned int command = (memory[pc] << 24) + (memory[pc + 1] << 16) + (memory[pc + 2] << 8) + memory[pc + 3];
@@ -346,15 +346,12 @@ public:
         if(command == 0x0ff00513){
             preIF.endornot = true;
         }
-        if(command == 4213174511){
-            cout << " sdfbs" << endl;
-        }
         preID.command = command;
         preID.empty = false;
         pc += 4;
         preID.pc = pc - 4;
 
-        cout << command << "\t" << pc << endl;
+        //cout << command << "\t" << pc << endl;
         //cout << (unsigned)x[12] << "\t" << (unsigned)x[11] <<endl;
         return;
     }
@@ -362,7 +359,7 @@ public:
         if(preID.endornot)return;
         if(preID.bubble){
             preID.bubble--;
-            cout << "ID bubble" << " " << preID.bubble<<endl;
+//            cout << "ID bubble" << " " << preID.bubble<<endl;
             return;
         }
 
@@ -492,7 +489,7 @@ public:
         if(preEX.endornot)return;
         if(preEX.bubble){
             preEX.bubble--;
-            cout << "EX bubble" << " "<< preEX.bubble << endl;
+//            cout << "EX bubble" << " "<< preEX.bubble << endl;
             return;
         }
 
@@ -738,7 +735,7 @@ public:
         if(preMEM.endornot)return;
         if(preMEM.bubble){
             preMEM.bubble--;
-            cout << "MEM bubble" << " " << preMEM.bubble << endl;
+//            cout << "MEM bubble" << " " << preMEM.bubble << endl;
             return;
         }
 
@@ -783,7 +780,7 @@ public:
         if (preWB.bubble) {
 
             preWB.bubble--;
-            cout << "WB bubble" << " " << preWB.bubble << endl;
+//            cout << "WB bubble" << " " << preWB.bubble << endl;
             return true;
         }
 
@@ -823,7 +820,8 @@ public:
             }
             ;
             //printf("%u\t%u\n",preWB.command,pc);
-        }else return true;
+        }
+        return true;
     }
     void RUN(){
 //        while(true){
