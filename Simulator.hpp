@@ -293,8 +293,10 @@ public:
         BIG_TYPE BT;
         type t;
         unsigned int command;
-        unsigned int rs1,rs2,rd;
+        unsigned int rs1 = 0,rs2 = 0,rd;
         unsigned int imm;
+        bool changex1 = false,changex2 = false;
+        int rs1value = 0,rs2value = 0;
         bool ifmem = false;
         bool pc_possible_change = false;
     }preEX;
@@ -334,13 +336,13 @@ public:
 
         unsigned int command = (memory[pc + 3] << 24) + (memory[pc + 2] << 16) + (memory[pc + 1] << 8) + memory[pc];
 
-            if(preEX.pc_possible_change) {
-                preEX.pc_possible_change = false;
-                preIF.bubble += 2;
-                preID.bubble += 3;
-                //preID.empty = false;
-                return;
-            }
+        if(preEX.pc_possible_change) {
+            preEX.pc_possible_change = false;
+            preIF.bubble += 2;
+            preID.bubble += 3;
+            //preID.empty = false;
+            return;
+        }
         //unsigned int command = (memory[pc] << 24) + (memory[pc + 1] << 16) + (memory[pc + 2] << 8) + memory[pc + 3];
         //unsigned int command = (memory[pc + 3] << 24) + (memory[pc + 2] << 16) + (memory[pc + 1] << 8) + memory[pc];
         if(command == 0x0ff00513){
@@ -351,7 +353,7 @@ public:
         pc += 4;
         preID.pc = pc - 4;
 
-        //cout << command << "\t" << pc << endl;
+       // cout << command << "\t" << pc << endl;
         //cout << (unsigned)x[12] << "\t" << (unsigned)x[11] <<endl;
         return;
     }
@@ -428,54 +430,49 @@ public:
                 }
                 if (BT == B || BT == J || preEX.t == JALR || preEX.t == AUIPC) {
                     preEX.pc_possible_change = true;
-//                    if (preMEM.ifpcchanged) {
-//                        preEX.bubble += 2;
-//                        preID.bubble += 2;
-//                        preIF.bubble += 2;
-//                        return;
-//                    }
                 }
                 if (preEX.rs1 != 0 && preEX.rs1 == preMEM.rd && !preMEM.memo) {
-                    preEX.bubble += 2;
+                    preEX.changex1 = true;
+                    preEX.rs1value = preMEM.rd_value;
                     preEX.empty = false;
-                    preID.bubble += 2;
-                    preID.empty = false;
-                    preIF.bubble += 2;
+                    preID.empty = false ;
+                    add(2);
                     return;
                 }
                 if (preEX.rs2 != 0 && preEX.rs2 == preMEM.rd && !preMEM.memo) {
-                    preEX.bubble += 2;
-                    preID.bubble += 2;
-                    preIF.bubble += 2;
+                    preEX.changex2 = true;
+                    preEX.rs2value = preMEM.rd_value;
+                    add(2);
                     preEX.empty = false;
                     preID.empty = false;
                     return;
                 }
-                if (preEX.rs1 != 0 && preEX.rs1 == preWB.rd) {
-                    preEX.bubble++;
-                    preID.bubble++;
-                    preIF.bubble++;
+                if (preEX.rs1 != 0 && preEX.rs1 == preWB.rd && preWB.BT != S) {
+                    add(1);
+                    preEX.changex1 = true;
+                    preEX.rs1value = preWB.rd_value;
                     preEX.empty = false;
                     preID.empty = false;
                     return;
                 }
-                if (preEX.rs2 != 0 && preEX.rs2 == preWB.rd) {
-                    preEX.bubble++;
-                    preID.bubble++;
-                    preIF.bubble++;
+                if (preEX.rs2 != 0 && preEX.rs2 == preWB.rd && preWB.BT != S) {
+                    add(1);
+                    preEX.changex2 = true;
+                    preEX.rs2value = preWB.rd_value;
                     preEX.empty = false;
                     preID.empty = false;
                     return;
                 }
+
+
+
                 if (preMEM.memo) {
                     if (preEX.t == LB || preEX.t == LH || preEX.t == LW || preEX.t == LBU || preEX.t == LHU && preEX.rs1 != 0) {
-                        if (x[preEX.rs1] + preEX.imm == preMEM.M.offset ||
-                            x[preEX.rs1] + preEX.imm == preMEM.M.offset + 1 ||
-                            x[preEX.rs1] + preEX.imm == preMEM.M.offset + 2 ||
-                            x[preEX.rs1] + preEX.imm == preMEM.M.offset + 3) {
-                            preEX.bubble++;
-                            preID.bubble++;
-                            preIF.bubble++;
+                        if ((preEX.changex1) ? preEX.rs1value : x[preEX.rs1] + preEX.imm == preMEM.M.offset ||
+                        (preEX.changex1) ? preEX.rs1value : x[preEX.rs1] + preEX.imm == preMEM.M.offset + 1 ||
+                        (preEX.changex1) ? preEX.rs1value : x[preEX.rs1] + preEX.imm == preMEM.M.offset + 2 ||
+                        (preEX.changex1) ? preEX.rs1value : x[preEX.rs1] + preEX.imm == preMEM.M.offset + 3) {
+                            add(1);
                             preEX.empty = false;
                             preID.empty = false;
                             return;
@@ -484,6 +481,11 @@ public:
                 }
             }
         }
+    }
+    void add(int n){
+        preEX.bubble += n;
+        preID.bubble += n;
+        preIF.bubble += n;
     }
     void EX(){
         if(preEX.endornot)return;
@@ -513,6 +515,8 @@ public:
                 unsigned int rd = preEX.rd;
                 unsigned int rs1 = preEX.rs1;
                 unsigned int rs2 = preEX.rs2;
+                unsigned int rs1value = preEX.rs1value;
+                unsigned int rs2value = preEX.rs2value;
                 preMEM.rd = rd;
                 if (BT == R) {
                     type t = gettokentype(command);
@@ -731,6 +735,255 @@ public:
             }
         }
     }
+//    void EX(){
+//        if(preEX.endornot)return;
+//        if(preEX.bubble){
+//            preEX.bubble--;
+//            cout << "EX bubble" << " "<< preEX.bubble << endl;
+//            return;
+//        }
+//        else {
+//            if (preEX.empty) {
+//                return;
+//            } else {
+//                if(preEX.command == 0x0ff00513){
+//                    preEX.endornot = true;
+//                    preMEM.command = 0x0ff00513;
+//                    preMEM.empty = false;
+//                    return;
+//                }
+//                preEX.pc_possible_change = false;
+//                preMEM.empty = false;
+//                preEX.empty = true;
+//                BIG_TYPE BT = preEX.BT;
+//                preMEM.BT = BT;
+//                unsigned int command = preEX.command;
+//                preMEM.command = command;
+//                unsigned int rd = preEX.rd;
+//                unsigned int rs1 = preEX.rs1;
+//                unsigned int rs2 = preEX.rs2;
+//                preMEM.rd = rd;
+//                if (BT == R) {
+//                    type t = gettokentype(command);
+//                    preMEM.t = t;
+//                    int ans = 0;
+//                    if (t == ADD) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) + ((preEX.changex2) ? preEX.rs2value : x[rs2]);
+//                    } else if (t == SUB) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) - ((preEX.changex2) ? preEX.rs2value : x[rs2]);
+//                    } else if (t == SLL) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) << (((preEX.changex2) ? preEX.rs2value : x[rs2] & 0b11111));
+//                    } else if (t == SLT) {
+//                        ans = (((preEX.changex1) ? preEX.rs1value : x[rs1]) < ((preEX.changex2) ? preEX.rs2value : x[rs2]));
+//                    } else if (t == SLTU) {
+//                        ans = (((unsigned int) (preEX.changex1) ? preEX.rs1value : x[rs1]) < (unsigned int) ((preEX.changex2) ? preEX.rs2value : x[rs2]));
+//                    } else if (t == XOR) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) ^ ((preEX.changex2) ? preEX.rs2value : x[rs2]);
+//                    } else if (t == SRL) {
+//                        ans = ((unsigned) (preEX.changex1) ? preEX.rs1value : x[rs1]) >> (unsigned int) (((preEX.changex2) ? preEX.rs2value : x[rs2]) & 0b11111);
+//                    } else if (t == SRA) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) >> ((preEX.changex2) ? preEX.rs2value : x[rs2] & 0b11111);
+//                    } else if (t == OR) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) | ((preEX.changex2) ? preEX.rs2value : x[rs2]);
+//                    } else if (t == AND) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) & ((preEX.changex2) ? preEX.rs2value : x[rs2]);
+//                    }
+//                    preMEM.rd_value = ans;
+//                    preMEM.rd = rd;
+//                } else if (BT == I) {
+////            unsigned int rd = (command >> 7) & 31;
+////            unsigned int rs1 = (command >> 15) & 31;
+//                    unsigned int imm110 = command >> 20;
+//                    int ans = 0;
+//                    imm110 = sext(12, imm110);
+//                    type t = gettokentype(command);
+//                    preMEM.t = t;
+//                    if (t == LB) {
+//                        unsigned int buffer = (preEX.changex1) ? preEX.rs1value : x[rs1] + imm110;
+//                        ans = memory[buffer];
+//                        ans = sext(8, ans);
+//                        //x[rd]=ans;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                    } else if (t == JALR) {
+//                        unsigned int t_ = preEX.pc + 4;
+//                        pc = ((preEX.changex1) ? preEX.rs1value : x[rs1] + imm110) & (~1);
+//                        //pc -= 4;
+//                        preMEM.ifpcchanged = true;
+//                        //x[rd]=t_;
+//                        preMEM.rd_value = t_;
+//                        preMEM.rd = rd;
+//                        preEX.changex1 = preEX.changex2 = false;
+//                        if (!rd)return;
+//                    } else if (t == LH) {
+//                        unsigned int pos = (preEX.changex1) ? preEX.rs1value : x[rs1] + imm110;
+//                        unsigned int tmp = (memory[pos + 1] << 8) + memory[pos];
+//                        tmp = sext(16, tmp);
+//                        //x[rd] = tmp;
+//                        preMEM.rd_value = tmp;
+//                        preMEM.rd = rd;
+//                    } else if (t == LW) {
+//                        unsigned int pos = (preEX.changex1) ? preEX.rs1value : x[rs1] + imm110;
+//                        unsigned int tmp =
+//                                (memory[pos + 3] << 24) + (memory[pos + 2] << 16) + (memory[pos + 1] << 8) +
+//                                memory[pos];
+//                        //x[rd]=tmp;
+//                        preMEM.rd_value = tmp;
+//                        preMEM.rd = rd;
+//                    } else if (t == LBU) {
+//                        unsigned int buffer = (unsigned) ((preEX.changex1) ? preEX.rs1value : x[rs1]) + (unsigned) imm110;
+//                        ans = memory[buffer];
+//                        //x[rd] = ans;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                    } else if (t == LHU) {
+//                        unsigned int pos = (unsigned) ((preEX.changex1) ? preEX.rs1value : x[rs1]) + imm110;
+//                        unsigned int tmp = (memory[pos + 1] << 8) + memory[pos];
+//                        //x[rd]=tmp;
+//                        preMEM.rd_value = tmp;
+//                        preMEM.rd = rd;
+//                    } else if (t == ADDI) {
+//                        ans = (preEX.changex1) ? preEX.rs1value : (x[rs1] + imm110);
+//                        //x[rd]=ans;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                    } else if (t == SLTI) {
+//                        ans = (((preEX.changex1) ? preEX.rs1value : x[rs1]) < imm110);
+//                        //x[rd]=ans;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                    } else if (t == SLTIU) {
+//                        ans = ((unsigned) ((preEX.changex1) ? preEX.rs1value : x[rs1]) < (unsigned) imm110);
+//                        //x[rd]=ans;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                    } else if (t == XORI) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) ^ imm110;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                        //
+//                    } else if (t == ANDI) {
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) & imm110;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                        //
+//                    } else if (t == SLLI) {
+//                        //unsigned int rs2 = (command >> 20) & 31;
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) << rs2;
+//                        ////printf(" %u\n",rs2);
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                        preMEM.BT = R;
+//                    } else if (t == SRLI) {
+//                        //unsigned int rs2 = (command >> 20) & 31;
+//                        ans = (unsigned) ((preEX.changex1) ? preEX.rs1value : x[rs1]) >> (unsigned) rs2;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                        preMEM.BT = R;
+//                    } else if (t == SRAI) {
+//                        //unsigned int rs2 = (command >> 20) & 31;
+//                        ans = ((preEX.changex1) ? preEX.rs1value : x[rs1]) >> rs2;
+//                        preMEM.rd_value = ans;
+//                        preMEM.rd = rd;
+//                        preMEM.BT = R;
+//                    }
+//                } else if (BT == S) {
+////            unsigned int rs1 = (command >> 15) & 31;
+////            unsigned int rs2 = (command >> 20) & 31;
+//                    unsigned int imm115 = command >> 25;
+//                    unsigned int imm40 = (command >> 7) & 31;
+//                    unsigned int imm = (imm115 << 5) + imm40;
+//                    imm = sext(12, imm);
+//                    type t = gettokentype(command);
+//                    preMEM.t = t;
+//                    if (t == SB) {
+//                        unsigned int offset = ((preEX.changex1) ? preEX.rs1value : x[rs1]) + imm;
+//                        //memory[offset] = ((preEX.changex2) ? preEX.rs2value : x[rs2] & ((1 << 8) - 1));
+//                        preMEM.memo = true;
+//                        preMEM.M.value = (((preEX.changex2) ? preEX.rs2value : x[rs2]) & ((1 << 8) - 1));
+//                        preMEM.M.offset = offset;
+//                        preMEM.M.len = 1;
+//                    } else if (t == SH) {
+//                        unsigned int offset = ((preEX.changex1) ? preEX.rs1value : x[rs1]) + imm;
+//                        //memory[offset] = ((preEX.changex2) ? preEX.rs2value : x[rs2] & ((1 << 16) - 1));
+//                        preMEM.memo = true;
+//                        preMEM.M.value = (((preEX.changex2) ? preEX.rs2value : x[rs2]) & ((1 << 16) - 1));
+//                        preMEM.M.offset = offset;
+//                        preMEM.M.len = 2;
+//                    } else if (t == SW) {
+//                        unsigned int offset = ((preEX.changex1) ? preEX.rs1value : x[rs1]) + imm;
+//                        //memory[offset] = (preEX.changex2) ? preEX.rs2value : x[rs2];
+//                        preMEM.memo = true;
+//                        preMEM.M.value = (preEX.changex2) ? preEX.rs2value : x[rs2];
+//                        preMEM.M.offset = offset;
+//                        preMEM.M.len = 4;
+//                    }
+//                } else if (BT == B) {
+//                    unsigned int imm =
+//                            ((command >> 31) << 12) + (((command >> 7) & 1) << 11) + (((command >> 25) & 63) << 5) +
+//                            (((command >> 8) & 15) << 1);
+//                    imm = sext(13, imm);
+//                    type t = gettokentype(command);
+//                    if (t == BEQ) {
+//                        if (((preEX.changex1) ? preEX.rs1value : x[rs1]) == ((preEX.changex2) ? preEX.rs2value : x[rs2])) {
+//                            preMEM.ifpcchanged = true;
+//                            pc = imm + preEX.pc;
+//                        }
+//                    } else if (t == BNE) {
+//                        if ((preEX.changex1) ? preEX.rs1value : x[rs1] != (preEX.changex2) ? preEX.rs2value : x[rs2]) {
+//                            preMEM.ifpcchanged = true;
+//                            pc = imm + preEX.pc;
+//                        }
+//                    } else if (t == BLT) {
+//                        if ((preEX.changex1) ? preEX.rs1value : x[rs1] < (preEX.changex2) ? preEX.rs2value : x[rs2]) {
+//                            preMEM.ifpcchanged = true;
+//                            pc = imm + preEX.pc;
+//                        }
+//                    } else if (t == BGE) {
+//                        if ((preEX.changex1) ? preEX.rs1value : x[rs1] >= (preEX.changex2) ? preEX.rs2value : x[rs2]) {
+//                            preMEM.ifpcchanged = true;
+//                            pc = imm + preEX.pc;
+//                        }
+//                    } else if (t == BLTU) {
+//                        if ((unsigned) (preEX.changex1) ? preEX.rs1value : x[rs1] < (unsigned) (preEX.changex2) ? preEX.rs2value : x[rs2]) {
+//                            preMEM.ifpcchanged = true;
+//                            pc = imm + preEX.pc;
+//                        }
+//                    } else if (t == BGEU) {
+//                        if ((unsigned) (preEX.changex1) ? preEX.rs1value : x[rs1] >= (unsigned) (preEX.changex2) ? preEX.rs2value : x[rs2]) {
+//                            preMEM.ifpcchanged = true;
+//                            pc = imm + preEX.pc;
+//                        }
+//                    }
+//                } else if (BT == U) {
+//                    unsigned int imm3112 = (command >> 12) << 12;
+//                    type t = gettokentype(command);
+//                    unsigned int ans = 0;
+//                    if (t == AUIPC) {
+//                        ans = preEX.pc + imm3112;
+//                    } else if (t == LUI) {
+//                        ans = imm3112;
+//                    }
+//                    preMEM.rd_value = ans;
+//                    preMEM.rd = rd;
+//                } else if (BT == J) {
+//                    unsigned int imm =
+//                            ((command >> 31) << 20) + (((command >> 12) & 255) << 12) + (((command >> 20) & 1) << 11) +
+//                            (((command >> 21) & 1023) << 1);
+//                    imm = sext(21, imm);
+//                    unsigned int ans = preEX.pc + 4;
+//                    preMEM.ifpcchanged = true;
+//                    pc = imm + preEX.pc;
+//                    preMEM.rd_value = ans;
+//                    preMEM.rd = rd;
+//                    preEX.changex1 = preEX.changex2 = false;
+//                    if (!rd)return;
+//                }
+//            }
+//        }
+//        preEX.changex1 = preEX.changex2 = false;
+//    }
+
     void MEM(){
         if(preMEM.endornot)return;
         if(preMEM.bubble){
@@ -784,7 +1037,9 @@ public:
             return true;
         }
 
+
         if (!preWB.empty) {
+            //cout << preWB.command << "\t" << preWB.rd_value << endl;
             BIG_TYPE BT = preWB.BT;
             int offset = preWB.rd;
             int ans = preWB.rd_value;
