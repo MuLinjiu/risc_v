@@ -26,7 +26,7 @@ void INPUT(){
 }
 
 int main(){
-    freopen("bulgarian.data", "r", stdin);
+    //freopen("bulgarian.data", "r", stdin);
     //freopen("2.txt","w",stdout);
     INPUT();
     Si.RUN();
