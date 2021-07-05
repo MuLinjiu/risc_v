@@ -7,6 +7,7 @@
 #include<iostream>
 #include "Types.hpp"
 #include <cmath>
+#include "prediction.hpp"
 
 using namespace std;
 unsigned char memory[1000000];
@@ -338,8 +339,8 @@ public:
 
         if(preEX.pc_possible_change) {
             preEX.pc_possible_change = false;
-            preIF.bubble += 2;
-            preID.bubble += 3;
+            //preIF.bubble += 0;
+            preID.bubble += 1;
             //preID.empty = false;
             return;
         }
@@ -364,9 +365,9 @@ public:
 //            cout << "ID bubble" << " " << preID.bubble<<endl;
             return;
         }
-
         else {
             if (preID.empty) {
+                preEX.empty = true;
                 return;
             } else {
                 if(preID.command == 0x0ff00513){
@@ -417,6 +418,9 @@ public:
                     preEX.rs1 = rs1;
                     preEX.rs2 = rs2;
                     preEX.imm = imm;
+                    if(pred[preID.pc].jump()){
+                        pc = imm + preID.pc;
+                    }
                 } else if (BT == U) {
                     unsigned int imm3112 = (preID.command >> 12) << 12;
                     preEX.rd = (preID.command >> 7) & 31;
@@ -427,8 +431,9 @@ public:
                                        (((preID.command >> 20) & 1) << 11) + (((preID.command >> 21) & 1023) << 1);
                     imm = sext(21, imm);
                     preEX.imm = imm;
+                    //pc = imm + preID.pc;
                 }
-                if (BT == B || BT == J || preEX.t == JALR || preEX.t == AUIPC) {
+                if (preEX.BT == B || preEX.BT == J || preEX.t == JALR || preEX.t == AUIPC) {
                     preEX.pc_possible_change = true;
                 }
                 if (preEX.rs1 != 0 && preEX.rs1 == preMEM.rd && !preMEM.memo) {
@@ -463,9 +468,6 @@ public:
                     preID.empty = false;
                     return;
                 }
-
-
-
                 if (preMEM.memo) {
                     if (preEX.t == LB || preEX.t == LH || preEX.t == LW || preEX.t == LBU || preEX.t == LHU && preEX.rs1 != 0) {
                         if ((preEX.changex1) ? preEX.rs1value : x[preEX.rs1] + preEX.imm == preMEM.M.offset ||
@@ -680,33 +682,117 @@ public:
                     type t = gettokentype(command);
                     if (t == BEQ) {
                         if (x[rs1] == x[rs2]) {
-                            preMEM.ifpcchanged = true;
+                            //preMEM.ifpcchanged = true;
                             pc = imm + preEX.pc;
+                            if(!pred[preEX.pc].jump()){
+                                preIF.bubble++;
+                                preID.bubble++;
+                                pred[preEX.pc].wrong++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(true);
+                        }
+                        else {
+                            if(pred[preEX.pc].jump()){
+                                pc = preEX.pc + 4;
+                                pred[preEX.pc].wrong++;
+                                //preID.bubble++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(false);
                         }
                     } else if (t == BNE) {
                         if (x[rs1] != x[rs2]) {
-                            preMEM.ifpcchanged = true;
+                            //preMEM.ifpcchanged = true;
                             pc = imm + preEX.pc;
+                            if(!pred[preEX.pc].jump()){
+                                preIF.bubble++;
+                                preID.bubble++;
+                                pred[preEX.pc].wrong++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(true);
+                        }
+                        else {
+                            if(pred[preEX.pc].jump()){
+                                pc = preEX.pc + 4;
+                                pred[preEX.pc].wrong++;
+                                //preID.bubble++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(false);
                         }
                     } else if (t == BLT) {
                         if (x[rs1] < x[rs2]) {
-                            preMEM.ifpcchanged = true;
+                            //preMEM.ifpcchanged = true;
                             pc = imm + preEX.pc;
+                            if(!pred[preEX.pc].jump()){
+                                preIF.bubble++;
+                                preID.bubble++;
+                                pred[preEX.pc].wrong++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(true);
+                        }
+                        else {
+                            if(pred[preEX.pc].jump()){
+                                pc = preEX.pc + 4;
+                                pred[preEX.pc].wrong++;
+                                //preID.bubble++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(false);
                         }
                     } else if (t == BGE) {
                         if (x[rs1] >= x[rs2]) {
-                            preMEM.ifpcchanged = true;
+                            //preMEM.ifpcchanged = true;
                             pc = imm + preEX.pc;
+                            if(!pred[preEX.pc].jump()){
+                                preIF.bubble++;
+                                preID.bubble++;
+                                pred[preEX.pc].wrong++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(true);
+                        }
+                        else {
+                            if(pred[preEX.pc].jump()){
+                                pc = preEX.pc + 4;
+                                pred[preEX.pc].wrong++;
+                                //preID.bubble++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(false);
                         }
                     } else if (t == BLTU) {
                         if ((unsigned) x[rs1] < (unsigned) x[rs2]) {
-                            preMEM.ifpcchanged = true;
+                            //preMEM.ifpcchanged = true;
                             pc = imm + preEX.pc;
+                            if(!pred[preEX.pc].jump()){
+                                preIF.bubble++;
+                                preID.bubble++;
+                                pred[preEX.pc].wrong++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(true);
+                        }
+                        else {
+                            if(pred[preEX.pc].jump()){
+                                pc = preEX.pc + 4;
+                                pred[preEX.pc].wrong++;
+                                //preID.bubble++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(false);
                         }
                     } else if (t == BGEU) {
                         if ((unsigned) x[rs1] >= (unsigned) x[rs2]) {
-                            preMEM.ifpcchanged = true;
+                            //preMEM.ifpcchanged = true;
                             pc = imm + preEX.pc;
+                            if(!pred[preEX.pc].jump()){
+                                preIF.bubble++;
+                                preID.bubble++;
+                                pred[preEX.pc].wrong++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(true);
+                        }
+                        else {
+                            if(pred[preEX.pc].jump()){
+                                pc = preEX.pc + 4;
+                                pred[preEX.pc].wrong++;
+                                //preID.bubble++;
+                            }else pred[preEX.pc].right++;
+                            pred[preEX.pc].adjust(false);
                         }
                     }
                 } else if (BT == U) {
@@ -726,7 +812,7 @@ public:
                             (((command >> 21) & 1023) << 1);
                     imm = sext(21, imm);
                     unsigned int ans = preEX.pc + 4;
-                    preMEM.ifpcchanged = true;
+                    //preMEM.ifpcchanged = true;
                     pc = imm + preEX.pc;
                     preMEM.rd_value = ans;
                     preMEM.rd = rd;

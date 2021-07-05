@@ -3,4 +3,4 @@ project(code)
 
 set(CMAKE_CXX_STANDARD 14)
 add_executable(code
-        main.cpp Types.hpp Simulator.hpp)
+        main.cpp Types.hpp Simulator.hpp prediction.hpp)

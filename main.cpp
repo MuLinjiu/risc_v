@@ -26,9 +26,10 @@ void INPUT(){
 }
 
 int main(){
-    //freopen("pi.data", "r", stdin);
+    freopen("bulgarian.data", "r", stdin);
     //freopen("2.txt","w",stdout);
     INPUT();
     Si.RUN();
+    //cout << PRE.efficiency();
     return 0;
 }
